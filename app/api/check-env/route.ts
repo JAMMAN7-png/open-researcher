@@ -44,24 +44,20 @@ export async function GET() {
     ? !firecrawlBaseUrl.includes('api.firecrawl.dev') 
     : false;
 
-  // Add debug info (only in development)
-  const debugInfo = process.env.NODE_ENV === 'development' ? {
+  // Key prefix info for display (safe to show)
+  const keyPrefixes = {
     anthropicKeyPrefix: process.env.ANTHROPIC_API_KEY 
-      ? process.env.ANTHROPIC_API_KEY.substring(0, 10) + '...' 
+      ? process.env.ANTHROPIC_API_KEY.substring(0, 8) + '... (env)' 
       : 'NOT SET',
     firecrawlKeyPrefix: process.env.FIRECRAWL_API_KEY 
-      ? process.env.FIRECRAWL_API_KEY.substring(0, 10) + '...' 
+      ? process.env.FIRECRAWL_API_KEY.substring(0, 6) + '... (env)' 
       : 'NOT SET',
     openrouterKeyPrefix: process.env.OPENROUTER_API_KEY 
-      ? process.env.OPENROUTER_API_KEY.substring(0, 8) + '...' 
+      ? process.env.OPENROUTER_API_KEY.substring(0, 8) + '... (env)' 
       : 'NOT SET',
     firecrawlBaseUrl: firecrawlBaseUrl || 'https://api.firecrawl.dev (default)',
     isFirecrawlSelfHosted,
-    nodeEnv: process.env.NODE_ENV
-  } : {
-    // Always include these for client-side detection
-    firecrawlBaseUrl: firecrawlBaseUrl || undefined,
-    isFirecrawlSelfHosted,
+    nodeEnv: process.env.NODE_ENV,
   };
 
   logger.system.info('Environment check complete', { 
@@ -76,7 +72,7 @@ export async function GET() {
 
   const response: EnvCheckResponse = { 
     environmentStatus,
-    ...debugInfo
+    ...keyPrefixes
   };
 
   return NextResponse.json(response);
