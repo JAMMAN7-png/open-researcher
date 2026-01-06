@@ -36,7 +36,7 @@ import {
   ANTHROPIC_MODELS,
   type LLMProvider 
 } from '@/lib/stores/config-store'
-import { logger } from '@/lib/logger'
+import logger from '@/lib/logger'
 
 interface ApiKeyStatus {
   name: string
@@ -145,14 +145,12 @@ export function AdminPanel() {
 
   // Load models from API
   const loadModels = useCallback(async (forceRefresh = false) => {
-    if (isLoadingModels) return
-    
     setIsLoadingModels(true)
     setModelLoadError(null)
-    logger.system.info('Loading models from API')
+    console.log('[AdminPanel] Loading models from API...')
     
     try {
-      const apiKey = openRouterKey || localStorage.getItem('openrouter_api_key')
+      const apiKey = openRouterKey || (typeof window !== 'undefined' ? localStorage.getItem('openrouter_api_key') : null)
       const headers: Record<string, string> = {}
       if (apiKey) {
         headers['X-OpenRouter-API-Key'] = apiKey
@@ -169,29 +167,28 @@ export function AdminPanel() {
       }
       
       const data: ModelsResponse = await response.json()
+      console.log('[AdminPanel] Loaded models:', { anthropic: data.anthropic?.length, openrouter: data.openrouter?.length })
       setDynamicModels(data)
       
       if (data.error) {
         setModelLoadError(data.error)
       }
-      
-      logger.system.info(`Loaded ${data.anthropic.length} Anthropic and ${data.openrouter.length} OpenRouter models`)
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-      logger.system.error('Failed to load models', { error: errorMessage })
+      console.error('[AdminPanel] Failed to load models:', errorMessage)
       setModelLoadError(errorMessage)
     } finally {
       setIsLoadingModels(false)
     }
-  }, [isLoadingModels, openRouterKey])
+  }, [openRouterKey])
 
-  // Load initial status
+  // Load initial status when dialog opens
   useEffect(() => {
     if (open) {
+      console.log('[AdminPanel] Dialog opened, loading status and models...')
       loadEnvironmentStatus()
-      loadModels()
       
-      // Load from localStorage
+      // Load from localStorage first
       const storedFirecrawlKey = localStorage.getItem('firecrawl_api_key')
       if (storedFirecrawlKey) {
         setFirecrawlKey(storedFirecrawlKey)
@@ -206,14 +203,26 @@ export function AdminPanel() {
       if (storedFirecrawlUrl) {
         setFirecrawlUrl(storedFirecrawlUrl)
       }
+      
+      // Load models
+      loadModels()
     }
-  }, [open, loadModels])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open])
 
   // Get available models based on provider
   const availableModels = useMemo(() => {
+    console.log('[AdminPanel] Computing availableModels', { 
+      hasDynamicModels: !!dynamicModels, 
+      llmProvider,
+      dynamicAnthropicCount: dynamicModels?.anthropic?.length,
+      dynamicOpenRouterCount: dynamicModels?.openrouter?.length
+    })
+    
     if (!dynamicModels) {
       // Fallback to static models
-      return llmProvider === 'anthropic' ? ANTHROPIC_MODELS.map(m => ({
+      console.log('[AdminPanel] Using static fallback models')
+      const fallbackModels = llmProvider === 'anthropic' ? ANTHROPIC_MODELS.map(m => ({
         id: m.id,
         name: m.name,
         provider: 'Anthropic',
@@ -222,46 +231,60 @@ export function AdminPanel() {
         inputCost: 0,
         outputCost: 0,
         modality: 'text→text',
-        description: m.description,
       })) : POPULAR_OPENROUTER_MODELS.map(m => ({
         id: m.id,
         name: m.name,
-        provider: m.id.split('/')[0],
+        provider: m.id.split('/')[0] || 'Unknown',
         contextLength: 128000,
         maxOutput: 8192,
         inputCost: 0,
         outputCost: 0,
         modality: 'text→text',
-        description: m.description,
       }))
+      console.log('[AdminPanel] Fallback models count:', fallbackModels.length)
+      return fallbackModels
     }
     
-    return llmProvider === 'anthropic' 
+    const models = llmProvider === 'anthropic' 
       ? dynamicModels.anthropic 
       : dynamicModels.openrouter
+    console.log('[AdminPanel] Using dynamic models, count:', models?.length)
+    return models || []
   }, [dynamicModels, llmProvider])
 
   // Filter models based on search
   const filteredModels = useMemo(() => {
+    console.log('[AdminPanel] Filtering models, search:', modelSearch, 'available:', availableModels?.length)
+    if (!availableModels || availableModels.length === 0) {
+      console.log('[AdminPanel] No available models to filter')
+      return []
+    }
     if (!modelSearch.trim()) return availableModels
     
     const search = modelSearch.toLowerCase()
     return availableModels.filter(model => 
-      model.name.toLowerCase().includes(search) ||
-      model.id.toLowerCase().includes(search) ||
-      model.provider.toLowerCase().includes(search)
+      model.name?.toLowerCase().includes(search) ||
+      model.id?.toLowerCase().includes(search) ||
+      model.provider?.toLowerCase().includes(search)
     )
   }, [availableModels, modelSearch])
 
   // Group models by provider
   const groupedModels = useMemo(() => {
+    console.log('[AdminPanel] Grouping models, filtered count:', filteredModels?.length)
     const groups: Record<string, ModelInfo[]> = {}
     
+    if (!filteredModels || filteredModels.length === 0) {
+      console.log('[AdminPanel] No filtered models to group')
+      return groups
+    }
+    
     for (const model of filteredModels) {
-      if (!groups[model.provider]) {
-        groups[model.provider] = []
+      const provider = model.provider || 'Unknown'
+      if (!groups[provider]) {
+        groups[provider] = []
       }
-      groups[model.provider].push(model)
+      groups[provider].push(model)
     }
     
     // Sort providers alphabetically
@@ -271,6 +294,7 @@ export function AdminPanel() {
       sortedGroups[key] = groups[key]
     }
     
+    console.log('[AdminPanel] Grouped into', Object.keys(sortedGroups).length, 'providers')
     return sortedGroups
   }, [filteredModels])
 
@@ -602,12 +626,24 @@ export function AdminPanel() {
                 <label className="text-xs font-medium text-gray-700 dark:text-gray-300">
                   Select Model
                 </label>
-                {dynamicModels && (
-                  <span className="text-xs text-gray-500">
-                    {availableModels.length} models available
-                  </span>
-                )}
+                <span className="text-xs text-gray-500">
+                  {isLoadingModels ? (
+                    <span className="flex items-center gap-1">
+                      <Loader2Icon className="size-3 animate-spin" />
+                      Loading...
+                    </span>
+                  ) : (
+                    `${availableModels?.length || 0} models available`
+                  )}
+                </span>
               </div>
+
+              {/* Debug info */}
+              {!isLoadingModels && availableModels?.length === 0 && (
+                <div className="text-xs text-amber-600 bg-amber-50 dark:bg-amber-900/20 rounded p-2">
+                  No models loaded. Click &quot;Reload Models&quot; to fetch the list.
+                </div>
+              )}
               
               {/* Custom Searchable Dropdown */}
               <div className="relative">

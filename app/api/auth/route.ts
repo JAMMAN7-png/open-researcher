@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
       expiresAt: Date.now() + SESSION_DURATION,
     });
   } catch (error) {
-    logger.auth.error('Login error', { requestId, error });
+    logger.auth.error('Login error', { requestId, error: error instanceof Error ? error : String(error) });
     return NextResponse.json(
       { success: false, error: 'Authentication failed' },
       { status: 500 }
@@ -164,7 +164,7 @@ export async function GET(request: NextRequest) {
       expiresAt: session.expiresAt,
     });
   } catch (error) {
-    logger.auth.error('Session verification error', { requestId, error });
+    logger.auth.error('Session verification error', { requestId, error: error instanceof Error ? error : String(error) });
     return NextResponse.json(
       { authenticated: false, authRequired: true, error: 'Verification failed' },
       { status: 500 }
@@ -187,7 +187,7 @@ export async function DELETE(request: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    logger.auth.error('Logout error', { requestId, error });
+    logger.auth.error('Logout error', { requestId, error: error instanceof Error ? error : String(error) });
     return NextResponse.json({ success: true }); // Still return success
   }
 }

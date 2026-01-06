@@ -60,7 +60,7 @@ export async function GET() {
     nodeEnv: process.env.NODE_ENV
   } : {
     // Always include these for client-side detection
-    firecrawlBaseUrl: firecrawlBaseUrl || null,
+    firecrawlBaseUrl: firecrawlBaseUrl || undefined,
     isFirecrawlSelfHosted,
   };
 
