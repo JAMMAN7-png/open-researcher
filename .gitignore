@@ -2,6 +2,12 @@
 
 # dependencies
 /node_modules
+
+# lock files (bun and node.js)
+package-lock.json
+bun.lock
+pnpm-lock.yaml
+yarn.lock
 /.pnp
 .pnp.*
 .yarn/*
