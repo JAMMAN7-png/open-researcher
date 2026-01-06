@@ -168,7 +168,7 @@ export async function POST(request: NextRequest) {
     // Test with a simple scrape to verify connection
     logger.firecrawl.debug('Testing with scrape request', { requestId });
     
-    const testResult = await firecrawl.scrapeUrl('https://example.com', {
+    const testResult = await firecrawl.scrape('https://example.com', {
       formats: ['markdown']
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any);

@@ -5,6 +5,7 @@ import { Toaster } from "sonner";
 import { ScreenReaderAnnouncer } from "@/components/accessibility/screen-reader-announcer";
 import { SkipLinks } from "@/components/accessibility/skip-link";
 import { MotionProvider } from "@/components/motion-provider";
+import { AuthProvider } from "@/components/auth-provider";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -92,7 +93,9 @@ export default function RootLayout({
         <ScreenReaderAnnouncer />
 
         <MotionProvider>
-          {children}
+          <AuthProvider>
+            {children}
+          </AuthProvider>
         </MotionProvider>
         <Toaster />
       </body>

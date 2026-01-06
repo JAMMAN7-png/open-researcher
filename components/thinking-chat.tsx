@@ -25,6 +25,7 @@ import {
   type Message,
   type SearchResult,
 } from '@/lib/stores'
+import { useConfigStore } from '@/lib/stores/config-store'
 
 // Import the ThinkingEvent type from thinking-display
 import type { ThinkingEvent } from '@/components/thinking-display'
@@ -265,8 +266,22 @@ export function ThinkingChat({ onMessagesChange, hasFirecrawlKey = false, onApiK
 
       // Add Firecrawl API key from localStorage if available
       const firecrawlKey = localStorage.getItem('firecrawl_api_key')
-
       if (firecrawlKey) headers['X-Firecrawl-API-Key'] = firecrawlKey
+
+      // Add Firecrawl base URL if using self-hosted
+      const firecrawlBaseUrl = localStorage.getItem('firecrawl_base_url')
+      if (firecrawlBaseUrl) headers['X-Firecrawl-Base-URL'] = firecrawlBaseUrl
+
+      // Add LLM configuration from config store
+      const configState = useConfigStore.getState()
+      headers['X-LLM-Provider'] = configState.llmProvider
+      headers['X-LLM-Model'] = configState.selectedModel
+
+      // Add OpenRouter API key if using OpenRouter
+      if (configState.llmProvider === 'openrouter') {
+        const openRouterKey = configState.openRouterApiKey || localStorage.getItem('openrouter_api_key')
+        if (openRouterKey) headers['X-OpenRouter-API-Key'] = openRouterKey
+      }
 
       const response = await fetch('/api/open-researcher', {
         method: 'POST',
@@ -410,13 +425,15 @@ export function ThinkingChat({ onMessagesChange, hasFirecrawlKey = false, onApiK
 
       if (error instanceof Error) {
         if (error.message.includes('ANTHROPIC_API_KEY')) {
-          errorMessage = 'The Anthropic API key is not configured. Please contact the site administrator.'
+          errorMessage = 'The Anthropic API key is not configured. Please check the Admin Panel.'
         } else if (error.message.includes('FIRECRAWL_API_KEY')) {
-          errorMessage = 'The Firecrawl API key is not configured. Please contact the site administrator.'
+          errorMessage = 'The Firecrawl API key is not configured. Please check the Admin Panel.'
+        } else if (error.message.includes('OpenRouter')) {
+          errorMessage = 'OpenRouter API key is not configured or invalid. Please check the Admin Panel.'
         } else if (error.message.includes('model')) {
-          errorMessage = 'The required AI model is not available. This feature may not be accessible in your region.'
+          errorMessage = 'The selected AI model is not available. Try selecting a different model in the Admin Panel.'
         } else if (error.message.includes('beta')) {
-          errorMessage = 'The interleaved thinking feature requires special API access. Please contact support.'
+          errorMessage = 'The interleaved thinking feature requires special API access. Try using OpenRouter instead.'
         } else {
           errorMessage = `Error: ${error.message}`
         }

@@ -11,6 +11,7 @@ export interface EnvironmentStatus {
   OPENROUTER_API_KEY: boolean;
   FIRECRAWL_BASE_URL: string | null;
   FIRESTARTER_DISABLE_CREATION_DASHBOARD: boolean;
+  AUTH_PASSWORD_SET: boolean;
 }
 
 export interface EnvCheckResponse {
@@ -34,6 +35,7 @@ export async function GET() {
     OPENROUTER_API_KEY: !!process.env.OPENROUTER_API_KEY,
     FIRECRAWL_BASE_URL: process.env.FIRECRAWL_BASE_URL || null,
     FIRESTARTER_DISABLE_CREATION_DASHBOARD: process.env.FIRESTARTER_DISABLE_CREATION_DASHBOARD === 'true',
+    AUTH_PASSWORD_SET: !!process.env.AUTH_PASSWORD,
   };
 
   // Determine if Firecrawl is self-hosted

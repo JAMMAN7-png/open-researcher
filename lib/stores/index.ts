@@ -25,3 +25,21 @@ export {
   type SearchResult,
   type Screenshot,
 } from './research-store'
+
+export {
+  useConfigStore,
+  getEffectiveConfig,
+  POPULAR_OPENROUTER_MODELS,
+  ANTHROPIC_MODELS,
+  type LLMProvider,
+  type OpenRouterModel,
+  type ConfigState,
+} from './config-store'
+
+export {
+  useAuthStore,
+  useIsAuthenticated,
+  useAuthRequired,
+  useAuthLoading,
+  useAuthError,
+} from './auth-store'

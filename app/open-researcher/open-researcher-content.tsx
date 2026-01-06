@@ -7,6 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { Github, ExternalLink, Loader2, AlertCircle } from 'lucide-react'
 import { ThinkingChat } from '@/components/thinking-chat'
 import { AdminPanel } from '@/components/admin-panel'
+import { SystemStatus } from '@/components/system-status'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -19,12 +20,15 @@ import {
 } from '@/components/ui/dialog'
 import { toast } from 'sonner'
 import { firecrawlApiKeySchema, type FirecrawlApiKeyInput } from '@/lib/schemas'
+import { useConfigStore } from '@/lib/stores/config-store'
 
 export default function OpenResearcherContent() {
   const [hasMessages, setHasMessages] = useState(false)
   const [showApiKeyModal, setShowApiKeyModal] = useState(false)
   const [isValidatingApiKey, setIsValidatingApiKey] = useState(false)
   const [hasFirecrawlKey, setHasFirecrawlKey] = useState(false)
+  
+  const { firecrawlConnected, setFirecrawlConnected } = useConfigStore()
 
   // Initialize react-hook-form with zod validation for API key
   const {
@@ -48,6 +52,7 @@ export default function OpenResearcherContent() {
       .then(data => {
         const hasEnvFirecrawlKey = data.environmentStatus.FIRECRAWL_API_KEY
         setHasFirecrawlKey(hasEnvFirecrawlKey)
+        setFirecrawlConnected(hasEnvFirecrawlKey)
 
         // Check localStorage for saved key if not in env
         if (!hasEnvFirecrawlKey) {
@@ -55,6 +60,7 @@ export default function OpenResearcherContent() {
           if (savedFirecrawlKey) {
             setValue('apiKey', savedFirecrawlKey)
             setHasFirecrawlKey(true)
+            setFirecrawlConnected(true)
           }
         }
       })
@@ -64,9 +70,10 @@ export default function OpenResearcherContent() {
         if (savedFirecrawlKey) {
           setValue('apiKey', savedFirecrawlKey)
           setHasFirecrawlKey(true)
+          setFirecrawlConnected(true)
         }
       })
-  }, [setValue])
+  }, [setValue, setFirecrawlConnected])
 
   // Reset form when modal is closed
   useEffect(() => {
@@ -162,7 +169,7 @@ export default function OpenResearcherContent() {
       <div
         className={`px-4 sm:px-6 lg:px-8 transition-all duration-700 ease-in-out ${hasMessages
             ? 'pt-0 pb-0 opacity-0 max-h-0 overflow-hidden'
-            : 'pt-8 pb-2 opacity-100 max-h-96'
+            : 'pt-8 pb-2 opacity-100 max-h-[500px]'
           }`}
         aria-hidden={hasMessages}
       >
@@ -175,6 +182,11 @@ export default function OpenResearcherContent() {
           <p className="mt-6 text-lg text-zinc-600 dark:text-zinc-400 opacity-0 animate-fade-up [animation-duration:500ms] [animation-delay:600ms] [animation-fill-mode:forwards]">
             Firecrawl-powered search, scrape, and agentic reasoning
           </p>
+          
+          {/* System Status Display */}
+          <div className="opacity-0 animate-fade-up [animation-duration:500ms] [animation-delay:800ms] [animation-fill-mode:forwards]">
+            <SystemStatus />
+          </div>
         </div>
       </div>
 
@@ -199,7 +211,7 @@ export default function OpenResearcherContent() {
         className="px-4 sm:px-6 lg:px-8 py-8 mt-auto"
         role="contentinfo"
       >
-        <div className="max-w-4xl mx-auto text-center">
+        <div className="max-w-4xl mx-auto text-center space-y-2">
           <p className="text-sm text-gray-600 dark:text-gray-400">
             Powered by{' '}
             <Link
@@ -209,6 +221,26 @@ export default function OpenResearcherContent() {
               rel="noopener noreferrer"
             >
               Firecrawl
+            </Link>
+            {' '}•{' '}
+            <Link
+              href="https://research.v244.net"
+              className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              research.v244.net
+            </Link>
+          </p>
+          <p className="text-xs text-gray-500 dark:text-gray-500">
+            Powered by{' '}
+            <Link
+              href="https://v244.net"
+              className="text-purple-600 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300 font-medium focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 rounded"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Version 244 (v244.net)
             </Link>
           </p>
         </div>
